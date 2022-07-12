@@ -273,7 +273,8 @@ class MirrorListener:
 
 def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False, pswd=None, multi=0):
 
-    try: bot.get_chat(message.from_user.id)
+    try:
+        bot.get_chat(message.from_user.id)
     except Exception as e:
         LOGGER.info(e)
         uname = message.from_user.mention_html(message.from_user.first_name)
