@@ -9,11 +9,12 @@ than the modifications. See https://github.com/AvinashReddy3108/PaperplaneExtend
 for original authorship. """
 
 from requests import get as rget, head as rhead, post as rpost, Session as rsession
-from re import findall as re_findall, sub as re_sub, match as re_match, search as re_search
+from re import findall as re_findall, sub as re_sub, match as re_match, search as re_search, DOTALL
 from base64 import b64decode
 from urllib.parse import urlparse, unquote
 from json import loads as jsnloads
 from lk21 import Bypass
+from lxml import etree
 from cfscrape import create_scraper
 from bs4 import BeautifulSoup
 from base64 import standard_b64encode
@@ -379,13 +380,13 @@ def gdtot(url: str) -> str:
     """ Gdtot google drive link generator
     By https://github.com/xcscxr """
 
-    if CRYPT is None:
-        raise DirectDownloadLinkException("ERROR: CRYPT cookie not provided")
+    if GDTOT_CRYPT is None:
+        raise DirectDownloadLinkException("ERROR: GDTOT_CRYPT cookie not provided")
 
     match = re_findall(r'https?://(.+)\.gdtot\.(.+)\/\S+\/\S+', url)[0]
 
     with rsession() as client:
-        client.cookies.update({'crypt': CRYPT})
+        client.cookies.update({'crypt': GDTOT_CRYPT})
         client.get(url)
         res = client.get(f"https://{match[0]}.gdtot.{match[1]}/dld?id={url.split('/')[-1]}")
     matches = re_findall('gd=(.*?)&', res.text)
@@ -418,9 +419,9 @@ def parse_infou(data):
     info = re.findall(">(.*?)<\/li>", data)
     info_parsed = {}
     for item in info:
-    	kv = [s.strip() for s in item.split(":", maxsplit=1)]
-    	info_parsed[kv[0].lower()] = kv[1]
-    	return info_parsed
+        kv = [s.strip() for s in item.split(":", maxsplit=1)]
+        info_parsed[kv[0].lower()] = kv[1]
+    return info_parsed
 
 def unified(url: str) -> str:
     if (UNIFIED_EMAIL or UNIFIED_PASS) is None:
@@ -448,18 +449,18 @@ def unified(url: str) -> str:
     headers = {
         "Content-Type": f"multipart/form-data; boundary={'-'*4}_",
     }
-    
+
     data = {"type": 1, "key": key, "action": "original"}
-    
+
     if len(ddl_btn):
-      info_parsed["link_type"] = "direct"
+        info_parsed["link_type"] = "direct"
         data["action"] = "direct"
 
     while data["type"] <= 3:
-    	try:
-    		response = client.post(url, data=gen_payload(data), headers=headers).json()
-    		break
-     except:
+        try:
+            response = client.post(url, data=gen_payload(data), headers=headers).json()
+            break
+        except:
             data["type"] += 1
 
     if "url" in response:
@@ -468,7 +469,7 @@ def unified(url: str) -> str:
         info_parsed["error"] = True
         info_parsed["error_message"] = response["message"]
     else:
-    	info_parsed["error"] = True
+        info_parsed["error"] = True
         info_parsed["error_message"] = "Something went wrong :("
 
     if info_parsed["error"]:
@@ -477,7 +478,7 @@ def unified(url: str) -> str:
     if urlparse(url).netloc == "appdrive.in":
         flink = info_parsed["gdrive_link"]
         return flink
-
+    
     elif urlparse(url).netloc == "gdflix.pro":
         flink = info_parsed["gdrive_link"]
         return flink
@@ -489,19 +490,19 @@ def unified(url: str) -> str:
         ]
         flink = drive_link
         return flink
-        
-        else:
-             res = client.get(info_parsed["gdrive_link"])
-             drive_link = etree.HTML(res.content).xpath(
-                 "//a[contains(@class,'btn btn-primary')]/@href"
+
+    else:
+        res = client.get(info_parsed["gdrive_link"])
+        drive_link = etree.HTML(res.content).xpath(
+            "//a[contains(@class,'btn btn-primary')]/@href"
         )[0]
         flink = drive_link
         return flink
-
+    
 
 def parse_info(res, url):
-	info_parsed = {}
-	if 'drivebuzz' in url:
+    info_parsed = {}
+    if 'drivebuzz' in url:
         info_chunks = re_findall('<td\salign="right">(.*?)<\/td>', res.text)
     elif 'sharer.pw' in url:
         f = re.findall(">(.*?)<\/td>", res.text)
@@ -548,7 +549,7 @@ def udrive(url: str) -> str:
     try:
         res = client.post(req_url, headers=headers, data=data).json()["file"]
     except:
-    	   raise DirectDownloadLinkException(
+        raise DirectDownloadLinkException(
             "ERROR! File Not Found or User rate exceeded !!"
         )
 
@@ -567,10 +568,9 @@ def udrive(url: str) -> str:
     else:
         gd_id = re.findall('gd=(.*)', res, re.DOTALL)[0]
 
-        info_parsed["gdrive_url"] = f"https://drive.google.com/open?id={gd_id}"
-        info_parsed["src_url"] = url
-        
-        flink = info_parsed['gdrive_url']
+    info_parsed["gdrive_url"] = f"https://drive.google.com/open?id={gd_id}"
+    info_parsed["src_url"] = url
+    flink = info_parsed['gdrive_url']
 
     return flink
 
