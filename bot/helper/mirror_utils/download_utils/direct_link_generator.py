@@ -9,11 +9,12 @@ than the modifications. See https://github.com/AvinashReddy3108/PaperplaneExtend
 for original authorship. """
 
 from requests import get as rget, head as rhead, post as rpost, Session as rsession
-from re import findall as re_findall, sub as re_sub, match as re_match, search as re_search
+from re import findall as re_findall, sub as re_sub, match as re_match, search as re_search, DOTALL
 from base64 import b64decode
 from urllib.parse import urlparse, unquote
 from json import loads as jsnloads
 from lk21 import Bypass
+from lxml import etree
 from cfscrape import create_scraper
 from bs4 import BeautifulSoup
 from base64 import standard_b64encode
@@ -379,13 +380,13 @@ def gdtot(url: str) -> str:
     """ Gdtot google drive link generator
     By https://github.com/xcscxr """
 
-    if CRYPT is None:
-        raise DirectDownloadLinkException("ERROR: CRYPT cookie not provided")
+    if GDTOT_CRYPT is None:
+        raise DirectDownloadLinkException("ERROR: GDTOT_CRYPT cookie not provided")
 
     match = re_findall(r'https?://(.+)\.gdtot\.(.+)\/\S+\/\S+', url)[0]
 
     with rsession() as client:
-        client.cookies.update({'crypt': CRYPT})
+        client.cookies.update({'crypt': GDTOT_CRYPT})
         client.get(url)
         res = client.get(f"https://{match[0]}.gdtot.{match[1]}/dld?id={url.split('/')[-1]}")
     matches = re_findall('gd=(.*?)&', res.text)
@@ -412,6 +413,7 @@ def gen_payload(data, boundary=f'{"-"*6}_'):
         )
     data_string += f"{boundary}--\r\n"
     return data_string
+
 
 def parse_infou(data):
     info = re.findall(">(.*?)<\/li>", data)
@@ -447,18 +449,18 @@ def unified(url: str) -> str:
     headers = {
         "Content-Type": f"multipart/form-data; boundary={'-'*4}_",
     }
-    
+
     data = {"type": 1, "key": key, "action": "original"}
 
     if len(ddl_btn):
-    	info_parsed["link_type"] = "direct"
+        info_parsed["link_type"] = "direct"
         data["action"] = "direct"
 
     while data["type"] <= 3:
         try:
-        	response = client.post(url, data=gen_payload(data), headers=headers).json()
+            response = client.post(url, data=gen_payload(data), headers=headers).json()
             break
-            except:
+        except:
             data["type"] += 1
 
     if "url" in response:
@@ -467,7 +469,7 @@ def unified(url: str) -> str:
         info_parsed["error"] = True
         info_parsed["error_message"] = response["message"]
     else:
-    	info_parsed["error"] = True
+        info_parsed["error"] = True
         info_parsed["error_message"] = "Something went wrong :("
 
     if info_parsed["error"]:
@@ -476,7 +478,7 @@ def unified(url: str) -> str:
     if urlparse(url).netloc == "appdrive.in":
         flink = info_parsed["gdrive_link"]
         return flink
-
+    
     elif urlparse(url).netloc == "gdflix.pro":
         flink = info_parsed["gdrive_link"]
         return flink
@@ -488,15 +490,15 @@ def unified(url: str) -> str:
         ]
         flink = drive_link
         return flink
-        
-    else:    
+
+    else:
         res = client.get(info_parsed["gdrive_link"])
         drive_link = etree.HTML(res.content).xpath(
             "//a[contains(@class,'btn btn-primary')]/@href"
         )[0]
         flink = drive_link
         return flink
-
+    
 
 def parse_info(res, url):
     info_parsed = {}
@@ -511,7 +513,7 @@ def parse_info(res, url):
     else:
         info_chunks = re.findall(">(.*?)<\/td>", res.text)
     for i in range(0, len(info_chunks), 2):
-    	info_parsed[info_chunks[i]] = info_chunks[i + 1]
+        info_parsed[info_chunks[i]] = info_chunks[i + 1]
     return info_parsed
 
 def udrive(url: str) -> str:
@@ -547,7 +549,7 @@ def udrive(url: str) -> str:
     try:
         res = client.post(req_url, headers=headers, data=data).json()["file"]
     except:
-    	  raise DirectDownloadLinkException(
+        raise DirectDownloadLinkException(
             "ERROR! File Not Found or User rate exceeded !!"
         )
 
@@ -573,9 +575,9 @@ def udrive(url: str) -> str:
     return flink
 
 def sharer_pw_dl(url, forced_login=False):
-
+    
     client = cloudscraper.create_scraper(delay=10, browser="chrome")
-
+    
     client.cookies.update(
         {"XSRF-TOKEN": XSRF_TOKEN, "laravel_session": laravel_session}
     )
@@ -631,14 +633,14 @@ def drivehubs(url: str) -> str:
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
     wd = webdriver.Chrome('/usr/src/app/chromedriver', chrome_options=chrome_options)
-
+    
     Ok = wd.get(url)
     wd.find_element(By.XPATH, '//button[@id="fast"]').click()
     sleep(10)
     wd.switch_to.window(wd.window_handles[-1])
     flink = wd.current_url
     wd.close()
-
+    
     if 'drive.google.com' in flink:
       return flink
     else:
