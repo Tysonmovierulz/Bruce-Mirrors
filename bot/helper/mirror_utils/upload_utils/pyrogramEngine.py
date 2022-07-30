@@ -128,7 +128,7 @@ class TgUploader:
                                                                   caption=cap_mono,
                                                                   disable_notification=True,
                                                                   progress=self.__upload_progress)
-                     if LOG_CHAT:
+                    if LOG_CHAT:
                         self.__sent_msg.copy(LOG_CHAT)                                             
                 else:
                     notMedia = True
