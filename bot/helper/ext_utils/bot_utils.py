@@ -257,6 +257,7 @@ def pop_up_stats():
     recv = get_readable_file_size(net_io_counters().bytes_recv)
     cpuUsage = cpu_percent(interval=0.5)
     stats = f"""
+\t「⭕️ Bᴏᴛ Sᴛᴀᴛɪsᴛɪᴄs ⭕️」\n
 CPU: {cpuUsage}%
 RAM: {mem_p}%
 FREE: {mem_a} | TOTAL: {mem_t}
@@ -265,7 +266,8 @@ DISK: {disk}%
 FREE: {disk_f} | TOTAL: {disk_t}
 DL: {recv} | UP: {sent}
 
-Made With 💞 Bʏ Bruce Mirror'S
+\t「 🚸 @FourBitCloud 🚸 」
+    
 """
     return stats
 
